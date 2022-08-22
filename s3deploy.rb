@@ -52,8 +52,8 @@ def export_output(out_key, out_value)
   }
 end
 
-def do_s3upload(sourcepth, full_destpth, aclstr)
-  return system(%Q{aws s3 cp "#{sourcepth}" "#{full_destpth}" --acl "#{aclstr}"})
+def do_s3upload(sourcepth, full_destpth)
+  return system(%Q{aws s3 cp "#{sourcepth}" "#{full_destpth}"})
 end
 
 # -----------------------
@@ -129,20 +129,6 @@ begin
   end
 
   #
-  # supported: private, public_read
-  acl_arg = 'public-read'
-  if options[:acl]
-    case options[:acl]
-    when 'public_read'
-      acl_arg = 'public-read'
-    when 'private'
-      acl_arg = 'private'
-    else
-      fail "Invalid ACL option: #{options[:acl]}"
-    end
-  end
-
-  #
   # ipa upload
   log_info('Uploading IPA...')
 
@@ -150,7 +136,7 @@ begin
   ipa_full_s3_path = s3_object_uri_for_bucket_and_path(options[:bucket_name], ipa_path_in_bucket)
   public_url_ipa = public_url_for_bucket_and_path(options[:bucket_name], options[:bucket_region], ipa_path_in_bucket)
 
-  fail 'Failed to upload IPA' unless do_s3upload(options[:ipa], ipa_full_s3_path, acl_arg)
+  fail 'Failed to upload IPA' unless do_s3upload(options[:ipa], ipa_full_s3_path)
 
   export_output('S3_DEPLOY_STEP_URL_IPA', public_url_ipa)
 
@@ -165,7 +151,7 @@ begin
     dsym_full_s3_path = s3_object_uri_for_bucket_and_path(options[:bucket_name], dsym_path_in_bucket)
     public_url_dsym = public_url_for_bucket_and_path(options[:bucket_name], options[:bucket_region], dsym_path_in_bucket)
 
-    fail 'Failed to upload dSYM' unless do_s3upload(options[:dsym], dsym_full_s3_path, acl_arg)
+    fail 'Failed to upload dSYM' unless do_s3upload(options[:dsym], dsym_full_s3_path)
 
     export_output('S3_DEPLOY_STEP_URL_DSYM', public_url_dsym)
 
@@ -196,7 +182,7 @@ begin
     plist_full_s3_path = "s3://#{options[:bucket_name]}/#{plist_path_in_bucket}"
     public_url_plist = public_url_for_bucket_and_path(options[:bucket_name], options[:bucket_region], plist_path_in_bucket)
 
-    fail 'Failed to upload Info.plist' unless do_s3upload(plist_local_path, plist_full_s3_path, acl_arg)
+    fail 'Failed to upload Info.plist' unless do_s3upload(plist_local_path, plist_full_s3_path)
     fail 'Failed to remove Plist' unless system(%Q{rm "#{plist_local_path}"})
 
     log_done('Info.plist upload success')
