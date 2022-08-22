@@ -42,9 +42,15 @@ is_always_run: false
 is_skippable: false
 deps:
   brew:
-  - name: awscli
+    - name: awscli
 run_if: ""
 inputs:
+  - apk_path: "$BITRISE_APK_PATH"
+    opts:
+      title: "APK path"
+      summary: ""
+      description: ""
+      is_required: true
   - ipa_path: "$BITRISE_IPA_PATH"
     opts:
       title: "IPA path"
@@ -109,14 +115,15 @@ inputs:
         Optional, if there is no specified value, then the default will be:
 
             bitrise_$BITRISE_APP_SLUG/${BITRISE_BUILD_TRIGGER_TIMESTAMP}_build_${BITRISE_BUILD_SLUG}
-  - file_access_level: "public_read"
-    opts:
-      title: "Amazon S3 file access level"
-      value_options:
-        - "private"
-        - "public_read"
-      is_required: true
 outputs:
+  - S3_DEPLOY_STEP_URL_APK: ""
+    opts:
+      title: "Amazon S3 Deploy APK URL"
+      summary: ""
+      description: ""
+      is_expand: false
+      is_required: true
+      is_dont_change_value: true
   - S3_DEPLOY_STEP_URL_IPA: ""
     opts:
       title: "Amazon S3 Deploy IPA URL"

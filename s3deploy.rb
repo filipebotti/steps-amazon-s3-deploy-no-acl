@@ -61,6 +61,7 @@ end
 # -----------------------
 
 options = {
+  apk: ENV['apk_path'],
   ipa: ENV['ipa_path'],
   dsym: ENV['dsym_path'],
   app_slug: ENV['app_slug'],
@@ -69,8 +70,7 @@ options = {
   secret_key: ENV['aws_secret_key'],
   bucket_name: ENV['bucket_name'],
   bucket_region: ENV['bucket_region'],
-  path_in_bucket: ENV['path_in_bucket'],
-  acl: ENV['file_access_level']
+  path_in_bucket: ENV['path_in_bucket']
 }
 
 #
@@ -90,13 +90,13 @@ log_details('* aws_secret_key: ***') unless options[:secret_key].to_s == ''
 log_details("* bucket_name: #{options[:bucket_name]}")
 log_details("* bucket_region: #{options[:bucket_region]}")
 log_details("* path_in_bucket: #{options[:path_in_bucket]}")
-log_details("* file_access_level: #{options[:acl]}")
 
 status = 'success'
 begin
   #
   # Validate options
   fail 'No IPA found to deploy. Terminating.' unless File.exist?(options[:ipa])
+  fail 'No APK found to deploy. Terminating.' unless File.exist?(options[:apk])
 
   unless File.exist?(options[:dsym])
     options[:dsym] = nil
@@ -110,7 +110,6 @@ begin
   fail 'Missing required input: aws_secret_key' if options[:secret_key].to_s.eql?('')
 
   fail 'Missing required input: bucket_name' if options[:bucket_name].to_s.eql?('')
-  fail 'Missing required input: file_access_level' if options[:acl].to_s.eql?('')
 
   #
   # AWS configs
@@ -127,6 +126,20 @@ begin
     utc_timestamp = Time.now.utc.to_i
     base_path_in_bucket = "bitrise_#{options[:app_slug]}/#{utc_timestamp}_build_#{options[:build_slug]}"
   end
+
+  #
+  # apk upload
+  log_info('Uploading APK...')
+
+  apk_path_in_bucket = "#{base_path_in_bucket}/#{File.basename(options[:apk])}"
+  apk_full_s3_path = s3_object_uri_for_bucket_and_path(options[:bucket_name], apk_path_in_bucket)
+  public_url_apk = public_url_for_bucket_and_path(options[:bucket_name], options[:bucket_region], apk_path_in_bucket)
+
+  fail 'Failed to upload IPA' unless do_s3upload(options[:apk], apk_full_s3_path)
+
+  export_output('S3_DEPLOY_STEP_URL_APK', public_url_apk)
+
+  log_done('APK upload success')
 
   #
   # ipa upload
