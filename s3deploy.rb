@@ -36,12 +36,8 @@ def s3_object_uri_for_bucket_and_path(bucket_name, path_in_bucket)
   return "s3://#{bucket_name}/#{path_in_bucket}"
 end
 
-def public_url_for_bucket_and_path(bucket_name, bucket_region, path_in_bucket)
-  if bucket_region.to_s == '' || bucket_region.to_s == 'us-east-1'
-    return "https://s3.amazonaws.com/#{bucket_name}/#{path_in_bucket}"
-  end
-
-  return "https://s3-#{bucket_region}.amazonaws.com/#{bucket_name}/#{path_in_bucket}"
+def public_url_for_bucket_and_path(s3_url_prefix, path_in_bucket)
+  return "#{s3_url_prefix}#{path_in_bucket}"
 end
 
 def export_output(out_key, out_value)
@@ -61,6 +57,7 @@ end
 # -----------------------
 
 options = {
+  s3_url_prefix: ENV['s3_url_prefix'],
   apk: ENV['apk_path'],
   ipa: ENV['ipa_path'],
   dsym: ENV['dsym_path'],
@@ -110,6 +107,7 @@ begin
   fail 'Missing required input: aws_secret_key' if options[:secret_key].to_s.eql?('')
 
   fail 'Missing required input: bucket_name' if options[:bucket_name].to_s.eql?('')
+  fail 'Missing required input: s3_url_prefix' if options[:s3_url_prefix].to_s.eql?('')
 
   #
   # AWS configs
@@ -133,7 +131,7 @@ begin
 
   apk_path_in_bucket = "#{base_path_in_bucket}/#{File.basename(options[:apk])}"
   apk_full_s3_path = s3_object_uri_for_bucket_and_path(options[:bucket_name], apk_path_in_bucket)
-  public_url_apk = public_url_for_bucket_and_path(options[:bucket_name], options[:bucket_region], apk_path_in_bucket)
+  public_url_apk = public_url_for_bucket_and_path(options[:s3_url_prefix], apk_path_in_bucket)
 
   fail 'Failed to upload IPA' unless do_s3upload(options[:apk], apk_full_s3_path)
 
@@ -147,7 +145,7 @@ begin
 
   ipa_path_in_bucket = "#{base_path_in_bucket}/#{File.basename(options[:ipa])}"
   ipa_full_s3_path = s3_object_uri_for_bucket_and_path(options[:bucket_name], ipa_path_in_bucket)
-  public_url_ipa = public_url_for_bucket_and_path(options[:bucket_name], options[:bucket_region], ipa_path_in_bucket)
+  public_url_ipa = public_url_for_bucket_and_path(options[:s3_url_prefix], ipa_path_in_bucket)
 
   fail 'Failed to upload IPA' unless do_s3upload(options[:ipa], ipa_full_s3_path)
 
@@ -162,7 +160,7 @@ begin
 
     dsym_path_in_bucket = "#{base_path_in_bucket}/#{File.basename(options[:dsym])}"
     dsym_full_s3_path = s3_object_uri_for_bucket_and_path(options[:bucket_name], dsym_path_in_bucket)
-    public_url_dsym = public_url_for_bucket_and_path(options[:bucket_name], options[:bucket_region], dsym_path_in_bucket)
+    public_url_dsym = public_url_for_bucket_and_path(options[:s3_url_prefix], dsym_path_in_bucket)
 
     fail 'Failed to upload dSYM' unless do_s3upload(options[:dsym], dsym_full_s3_path)
 
@@ -193,7 +191,7 @@ begin
 
     plist_path_in_bucket = "#{base_path_in_bucket}/Info.plist"
     plist_full_s3_path = "s3://#{options[:bucket_name]}/#{plist_path_in_bucket}"
-    public_url_plist = public_url_for_bucket_and_path(options[:bucket_name], options[:bucket_region], plist_path_in_bucket)
+    public_url_plist = public_url_for_bucket_and_path(options[:s3_url_prefix], plist_path_in_bucket)
 
     fail 'Failed to upload Info.plist' unless do_s3upload(plist_local_path, plist_full_s3_path)
     fail 'Failed to remove Plist' unless system(%Q{rm "#{plist_local_path}"})

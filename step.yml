@@ -45,6 +45,12 @@ deps:
     - name: awscli
 run_if: ""
 inputs:
+  - s3_url_prefix: "$S3_URL_PREFIX"
+    opts:
+      title: "S3 URL Prefix"
+      summary: ""
+      description: ""
+      is_required: true
   - apk_path: "$BITRISE_APK_PATH"
     opts:
       title: "APK path"
